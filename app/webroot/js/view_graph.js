@@ -32,14 +32,15 @@ $(function(){
     }
     //console.log(subdirectory);
     var pMapId = url.substr(url.lastIndexOf('/') + 1);
-
 /* Models */
 var Entity = Backbone.Model.extend({
     url: function(){
-        if (this.get('id'))
-    return subdirectory + '/entities/' + this.get('id') + '.json';
-        else
-    return subdirectory + '/entities.json';
+        if (this.get('id')){
+    		return subdirectory + '/entities/' + this.get('id') + '.json';
+    	}
+        else{
+    		return subdirectory + '/entities.json';
+    	}
     },
     parse: function(response) {
         return response.Entity
@@ -151,7 +152,6 @@ function getChildrenEntities(entityType, id){
                 children.push(data);
         });
     }
-
     return children;
 }
 
@@ -227,7 +227,6 @@ function load_reingold_tilford_tree(type){
 Links.fetch().done(function() {
     Entities.fetch().done(function(){
         Decompositions.fetch().done(function(){
-        
             $('#tabs').append("<h2>Requirements</h2>");
             load_reingold_tilford_tree('requirement');            
             $('#tabs').append("<h2>Functions</h2>");
