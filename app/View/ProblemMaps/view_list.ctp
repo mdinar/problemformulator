@@ -58,6 +58,11 @@
                 'action' => 'view_graph',
                 $ProblemMap['ProblemMap']['id']
             )); ?>)</small>
+            <small>(<?php echo $this->Html->link("view as graph(mbostock view)", array(
+                'controller' => 'problem_maps',
+                'action' => 'view_graphNew',
+                $ProblemMap['ProblemMap']['id']
+            )); ?>)</small>
             <div class="navbar-search pull-right">
                 <div class="input-append">
                     <input type="text" class="search-query" placeholder="Search entities">

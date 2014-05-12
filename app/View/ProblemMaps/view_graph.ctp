@@ -7,6 +7,7 @@
 <?php $this->Html->script('http://d3js.org/d3.v3.min.js', false); ?>
 <?php $this->Html->script('view_graph', false); ?>
 
+</script>
 <script type="text/template" id="entity-template">
 <% if (num_decomps > 0 && Entity.current_decomposition == null) { %>
     <i class="icon icon-folder-close pull-left"></i>
