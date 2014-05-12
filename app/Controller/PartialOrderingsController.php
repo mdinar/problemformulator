@@ -2,6 +2,7 @@
 // Controller/PartialOrderingsController.php
 class PartialOrderingsController extends AppController {
 	
+	
 	// used to output XML and JSON
 	public $components = array('RequestHandler');
 	

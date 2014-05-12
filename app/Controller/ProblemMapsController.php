@@ -2,6 +2,17 @@
 App::uses('File', 'Utility');
 
 // Controller/ProblemMapsController.php
+class ProblemMapRank {
+	public $id;
+	public $decomposition_id;
+	public $name;
+	public $type;
+	public $current_decomposition;
+	public $problem_map_id;
+	public $thelinks=array();
+	public $children1=array();
+}
+
 
 class ProblemMapsController extends AppController {
 
@@ -45,6 +56,7 @@ class ProblemMapsController extends AppController {
             'view',
             'view_list',
             'view_graph',
+            'view_graphNew',
             'edit',
             'delete',
             'view_log',
@@ -171,11 +183,134 @@ class ProblemMapsController extends AppController {
         // retrieve the problem map and set it to a variable accessible in the view
         $ProblemMap = $this->ProblemMap->findById($id);
         $this->set(compact('ProblemMap'));
-
+		
         // this is for JSON and XML requests.
         $this->set('_serialize', array(
             'ProblemMap'
         ));
+    }
+	
+	//Create a new graph view by Zongkun
+	public function view_graphNew($id) {
+		//For nodes and children
+		$array = array();
+		$return_arr = array();
+		$conn=mysql_connect("localhost","root","");
+		$select=mysql_select_db("problemFormulator",$conn);
+		//Requirements----------------
+		$fetch1 = mysql_query("SELECT * FROM `entities` where problem_map_id = $id and type = 'requirement'"); 
+		while ($row = mysql_fetch_array($fetch1, MYSQL_ASSOC)) {
+			$e = new ProblemMapRank;
+			$e->id = $row['id'];
+			$e->decomposition_id = $row['decomposition_id'];
+			$e->name = $row['name'];
+			$e->type = $row['type'];
+			$e->current_decomposition = $row['current_decomposition'];
+			$e->problem_map_id = $row['problem_map_id'];
+			$array[] = $e;
+		}
+		//Functions----------------
+		$fetch2 = mysql_query("SELECT * FROM `entities` where problem_map_id = $id and type = 'function'"); 
+		while ($row = mysql_fetch_array($fetch2, MYSQL_ASSOC)) {
+			$e = new ProblemMapRank;
+			$e->id = $row['id'];
+			$e->decomposition_id = $row['decomposition_id'];
+			$e->name = $row['name'];
+			$e->type = $row['type'];
+			$e->current_decomposition = $row['current_decomposition'];
+			$e->problem_map_id = $row['problem_map_id'];
+			$array[] = $e;
+		}
+		//Artifacts----------------
+		$fetch3 = mysql_query("SELECT * FROM `entities` where problem_map_id = $id and type = 'artifact'"); 
+		while ($row = mysql_fetch_array($fetch3, MYSQL_ASSOC)) {
+			$e = new ProblemMapRank;
+			$e->id = $row['id'];
+			$e->decomposition_id = $row['decomposition_id'];
+			$e->name = $row['name'];
+			$e->type = $row['type'];
+			$e->current_decomposition = $row['current_decomposition'];
+			$e->problem_map_id = $row['problem_map_id'];
+			$array[] = $e;
+		}
+		//Behaviors----------------
+		$fetch4 = mysql_query("SELECT * FROM `entities` where problem_map_id = $id and type = 'behavior'"); 
+		while ($row = mysql_fetch_array($fetch4, MYSQL_ASSOC)) {
+			$e = new ProblemMapRank;
+			$e->id = $row['id'];
+			$e->decomposition_id = $row['decomposition_id'];
+			$e->name = $row['name'];
+			$e->type = $row['type'];
+			$e->current_decomposition = $row['current_decomposition'];
+			$e->problem_map_id = $row['problem_map_id'];
+			$array[] = $e;
+		}
+		//Issues----------------
+		$fetch5 = mysql_query("SELECT * FROM `entities` where problem_map_id = $id and type = 'issue'"); 
+		while ($row = mysql_fetch_array($fetch5, MYSQL_ASSOC)) {
+			$e = new ProblemMapRank;
+			$e->id = $row['id'];
+			$e->decomposition_id = $row['decomposition_id'];
+			$e->name = $row['name'];
+			$e->type = $row['type'];
+			$e->current_decomposition = $row['current_decomposition'];
+			$e->problem_map_id = $row['problem_map_id'];
+			$array[] = $e;
+		}
+		//print_r($array);
+		//echo json_encode($array);
+		foreach ($array as $e) {
+    		//unset($array[$i]);
+    		
+    		foreach ($array as $tmp){
+    			if($tmp->decomposition_id!=null){
+    				if($e->current_decomposition!=null){
+		    			if($tmp->decomposition_id == $e->current_decomposition ){
+							$e->children1[] = $tmp->name;
+		    			}
+					}
+    			}
+    		//echo json_encode($tmp->decomposition_id);
+    		//echo json_encode($e->current_decomposition);
+    		//echo json_encode($e->children);
+    		}
+    		// print_r(" ;name up: ");
+			// echo json_encode($e->name);
+			// print_r("children: ");
+			// echo json_encode($e->children);
+			//echo json_encode($e);
+		}
+		//For links
+		$linkFetch = mysql_query("SELECT * FROM `links` where problem_map_id = $id"); 
+		while ($row = mysql_fetch_array($linkFetch, MYSQL_ASSOC)) {
+			//echo json_encode($row['from_entity_id']);
+			foreach ($array as $e) {
+				if($row['from_entity_id']==$e->id){
+					//$e->thelinks[] = $row['to_entity_id'];
+					foreach ($array as $tmp) {
+						if($tmp->id == $row['to_entity_id']){
+							$e->thelinks[] = $tmp->name;
+						}
+					}
+				}
+			}
+		}
+		$outPutJson =  json_encode($array);
+		file_put_contents('problemMapStructure.json',$outPutJson);
+		
+		
+         $this->log_entry($id, "ProblemMapsController, view_graph_2, " . $id);
+
+         // retrieve the problem map and set it to a variable accessible in the view
+         $ProblemMap = $this->ProblemMap->findById($id);
+         $this->set(compact('ProblemMap'));
+ 		
+         // this is for JSON and XML requests.
+         $this->set('_serialize', array(
+             'ProblemMap'
+         ));
+        
+        
     }
 	
 		
@@ -185,6 +320,7 @@ class ProblemMapsController extends AppController {
 
         // retrieve the problem map and set it to a variable accessible in the view
         $ProblemMap = $this->ProblemMap->findById($id);
+		
         $this->set(compact('ProblemMap'));
 
         // this is for JSON and XML requests.
@@ -235,7 +371,7 @@ class ProblemMapsController extends AppController {
         ));
     }
     public function add() {
-
+		$this->Session->setFlash('.....');
         $error = false;
 
         // check if the data is being posted (submitted).

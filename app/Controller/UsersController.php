@@ -1,7 +1,7 @@
 <?php
 // app/Controller/UsersController.php
 class UsersController extends AppController {
-
+	var $name = 'Users';
 	// uses these models
 	public $uses = array('ProblemMap', 'User');
 
