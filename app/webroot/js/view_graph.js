@@ -6,6 +6,9 @@ var Entities;
 var Links;
 var Decompositions;
 
+/* Collapsible Tree Global variables  - Change made by Pradeep */
+var tree, diagonal, svg = [];
+var inc = 0, duration = 750, root = [];
 
 /* Helper function */
 function nonBlockingLoop(fun, iterations){
@@ -32,15 +35,14 @@ $(function(){
     }
     //console.log(subdirectory);
     var pMapId = url.substr(url.lastIndexOf('/') + 1);
+
 /* Models */
 var Entity = Backbone.Model.extend({
     url: function(){
-        if (this.get('id')){
-    		return subdirectory + '/entities/' + this.get('id') + '.json';
-    	}
-        else{
-    		return subdirectory + '/entities.json';
-    	}
+        if (this.get('id'))
+    return subdirectory + '/entities/' + this.get('id') + '.json';
+        else
+    return subdirectory + '/entities.json';
     },
     parse: function(response) {
         return response.Entity
@@ -152,6 +154,7 @@ function getChildrenEntities(entityType, id){
                 children.push(data);
         });
     }
+
     return children;
 }
 
@@ -169,17 +172,174 @@ function getChildrenDecomps(entityType, id){
     return children;
 }
 
-function load_reingold_tilford_tree(type){
+function collapse(d) {
+		if (d.children) {
+		  d._children = d.children;
+		  d._children.forEach(collapse);
+		  d.children = null;
+		}
+}
+
+function collapsibleTree(type){
+
+	var data = {};
+	data['name'] = type + "s";
+	data['children'] = getChildrenEntities(type);
+
+	//console.log(JSON.stringify(data));
+	//console.log(data);
+
+	// d3 business.
+	var width = 350 + Entities.where({type: type}).length * 200;
+	var height = Entities.where({type: type}).length * 20;
+
+	tree = d3.layout.tree()
+	.size([height, width]);
+
+	diagonal = d3.svg.diagonal()
+	.projection(function(d) { return [d.y, d.x]; });
+
+	svg[type] = d3.select("#tabs div[id='"+type+"']").append("svg")
+	.attr("type", type)
+	.attr("width", width)
+	.attr("height", height)
+	.append("g")
+	.attr("transform", "translate(100,0)");
+
+	root[type] = data;
+	root[type].x0 = height / 2;
+	root[type].y0 = 0;
+
+	update(root[type], type);
+
+	d3.select(self.frameElement).style("height", "800px");
+}
+
+function update(source,type) {
+
+  // Compute the new tree layout.
+  var nodes = tree.nodes(root[type]).reverse(),
+      links = tree.links(nodes);
+
+  // Normalize for fixed-depth.
+  nodes.forEach(function(d) { d.y = d.depth * 180; });
+
+  // Update the nodes…
+  var node = svg[type].selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++inc); });
+
+  // Enter any new nodes at the parent's previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .on('click', click);
+
+  nodeEnter.append("circle")
+      .attr("r", 1e-6)
+      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+  // nodeEnter.append("text")
+      // .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
+      // .attr("dy", ".35em")
+      // .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+      // .text(function(d) { return d.name; })
+      // .style("fill-opacity", 1e-6);
+	
+	nodeEnter.append("text")
+      .attr("x", 7)
+      .attr("dy", 5)
+      .attr("text-anchor", "start")
+      .attr("font-weight", "bold")
+      .text(function(d) { return d.name; })
+      .style("fill-opacity", 1e-6);
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+  nodeUpdate.select("circle")
+      .attr("r", 4.5)
+      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+  nodeUpdate.select("text")
+      .style("fill-opacity", 1);
+
+  // Transition exiting nodes to the parent's new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+  nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+  // Update the links…
+  var link = svg[type].selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links at the parent's previous position.
+  link.enter().insert("path", "g")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      });
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent's new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+  inc = 0;
+}
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } 
+  else {
+    d.children = d._children;
+    d._children = null;
+  }
+  //console.log(this);
+  var type = $(this).parents('svg').attr('type');
+  //console.log(this.parentNode('svg'));
+  update(d, type);
+}
+
+// Old view - Change made by Pradeep
+/*function load_reingold_tilford_tree(type){
     var data = {};
     data['name'] = type + "s";
     data['children'] = getChildrenEntities(type);
-
-    //console.log(data);
+	
+	var json_data = JSON.stringify(data);
+    console.log(json_data);
 
     // d3 business.
     var width = 350 + Entities.where({type: type}).length * 200;
     var height = Entities.where({type: type}).length * 20;
-
+	
     var tree = d3.layout.tree()
         .size([height, width - 200]);
 
@@ -196,8 +356,8 @@ function load_reingold_tilford_tree(type){
     // load the data
     var nodes = tree.nodes(data),
       links = tree.links(nodes);
-
-    var link = svg.selectAll("path.link")
+    
+	var link = svg.selectAll("path.link")
       .data(links)
     .enter().append("path")
       .attr("class", "link")
@@ -218,25 +378,43 @@ function load_reingold_tilford_tree(type){
       .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
       .text(function(d) { return d.name; });
 
-    var test = svg.selectAll("g.node.text")
+    var	test = svg.selectAll("g.node.text")
 	.data(nodes)
  	.style("width", '100px');
 }
+*/
 
 /* Get data from server */
 Links.fetch().done(function() {
     Entities.fetch().done(function(){
         Decompositions.fetch().done(function(){
-            $('#tabs').append("<h2>Requirements</h2>");
-            load_reingold_tilford_tree('requirement');            
-            $('#tabs').append("<h2>Functions</h2>");
-            load_reingold_tilford_tree('function');            
-            $('#tabs').append("<h2>Artifacts</h2>");
-            load_reingold_tilford_tree('artifact');            
-            $('#tabs').append("<h2>Behaviors</h2>");
-            load_reingold_tilford_tree('behavior');            
-            $('#tabs').append("<h2>Issues</h2>");
-            load_reingold_tilford_tree('issue');            
+        
+		// Old Graph View - Change made by Pradeep
+		/*load_reingold_tilford_tree('requirement'); 
+		$('#tabs').append("<h4>Functions</h4>");
+		load_reingold_tilford_tree('function');     
+		$('#tabs').append("<h4>Artifacts</h4>");
+		load_reingold_tilford_tree('artifact'); 
+		$('#tabs').append("<h4>Behaviors</h4>");
+		load_reingold_tilford_tree('behavior');    
+		$('#tabs').append("<h4>Issues</h4>");
+		load_reingold_tilford_tree('issue'); */
+		
+		// Collabsible Tree View - Change made by Pradeep
+		$('#tabs').append("<div id='requirement' class='headline'><div class='headline-in'><h4>Requirements</h4><a href='javascript:void(0);' id='toggle' onclick='toggleBlind(this);'>Click</a></div></div>");
+		collapsibleTree('requirement');            
+		
+		$('#tabs').append("<div id='function' class='headline'><div class='headline-in'><h4>Functions</h4><a href='javascript:void(0);' id='toggle' onclick='toggleBlind(this);'>Click</a></div></div>");
+		collapsibleTree('function');            
+		
+		$('#tabs').append("<div id='artifact' class='headline'><div class='headline-in'><h4>Artifacts</h4><a href='javascript:void(0);' id='toggle' onclick='toggleBlind(this);'>Click</a></div></div>");
+		collapsibleTree('artifact');            
+		
+		$('#tabs').append("<div id='behavior' class='headline'><div class='headline-in'><h4>Behaviors</h4><a href='javascript:void(0);' id='toggle' onclick='toggleBlind(this);'>Click</a></div></div>");
+		collapsibleTree('behavior');            
+		
+		$('#tabs').append("<div id='issue' class='headline'><div class='headline-in'><h4>Issues</h4><a href='javascript:void(0);' id='toggle' onclick='toggleBlind(this);'>Click</a></div></div>");
+		collapsibleTree('issue');            
 
 /*
             // use the stuff here?
@@ -336,5 +514,9 @@ $('.search-query').typeahead({
     }
 });
 
-
 });
+
+function toggleBlind(a) {
+	$(a).parents('.headline').children('svg').toggle('blind');
+	$(a).toggleClass("plus");
+}

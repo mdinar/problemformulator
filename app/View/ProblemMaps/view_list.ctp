@@ -32,7 +32,7 @@
     <%= title %>
     <a href="#" id="<%= type %>-tooltip"><i class="icon-question-sign"></i></a>
     </h2>
-    <a href="#" id="<%= type %>-csv" class="download-csv">(download csv)</a>
+    <!--<a href="#" id="<%= type %>-csv" class="download-csv">(download csv)</a>-->
 </div>
 <div class="row-fluid">
     <div class="input-append entity-dialog">
@@ -43,7 +43,7 @@
         </button>
     </div>
 </div>
-<hr>
+<!--<hr>-->
 <div class="row-fluid">
     <ul id='<%= type %>' class='entity-list'>
     </ul>

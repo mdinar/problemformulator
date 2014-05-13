@@ -654,7 +654,6 @@ var EntityListView = Backbone.View.extend({
         if ( entity.get('type') !== this.type ){
             return;
         }
-
         var view = new EntityView({model: entity});
         if (entity.get('list_order') == 0){
             $('#' + this.type).prepend(view.render().el);
@@ -715,8 +714,9 @@ Links.fetch().done(function() {
             $('#issue-tooltip').tooltip({
                 html: true,
                 title: "Issues are the questions and concerns that might arise during the course of creating a design (e.g., will my application support blind users?)"});
-
-            /* CSV stuff */
+			
+			/* CSV stuff */
+			/*
             $('#requirement-csv').click(function(){
                 outputCSV('requirement');
             });
@@ -732,6 +732,7 @@ Links.fetch().done(function() {
             $('#issue-csv').click(function(){
                 outputCSV('issue');
             });
+			*/
 
             /* load all the entities */
             Req.addAll();
