@@ -217,6 +217,12 @@ function collapsibleTree(type){
 
 function update(source,type) {
 
+  // Compute height and width of the tree layout
+  var width = 350 + Entities.where({type: type}).length * 200;
+  var height = Entities.where({type: type}).length * 20;
+
+  tree = tree.size([height, width]);
+  
   // Compute the new tree layout.
   var nodes = tree.nodes(root[type]).reverse(),
       links = tree.links(nodes);
